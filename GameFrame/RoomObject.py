@@ -1,8 +1,8 @@
 import math
 import os
 import pygame
-import math
-
+from GameFrame.Globals import Globals
+import time
 
 class RoomObject:
 
@@ -16,47 +16,22 @@ class RoomObject:
         self.prev_y = y
         self.width = 0
         self.height = 0
-        self.image = 0
-        self.image_orig = 0
         self.curr_rotation = 0
         self.x_speed = 0
         self.y_speed = 0
         self.gravity = 0
-        self.handle_key_events = False
-        self.handle_mouse_events = False
         self.angle = 0
 
         self.collision_object_types = set()
         self.collision_objects = []
 
-    def load_image(self, file_name):
-        '''
-        Loads an image to be used as a sprite\n
-        Takes 1 argument: file_name\n
-        the file is searched for in the Images folder
-        '''
-        return os.path.join('Images', file_name)
-
-    def set_image(self, image, width, height):
-        '''
-        Sets a sprite's image\n
-        takes 3 arguments: image, width, and height\n
-        image has to be loaded using the self.load_image() function\n
-        width and height define the dimensions of the sprite
-        '''
-        self.image_orig = pygame.image.load(image).convert_alpha()
-        self.image_orig = pygame.transform.scale(self.image_orig, (width, height))
+    def set_rect(self, width, height): ################# REMOVE COLOUR ARGUMENT AFTER TEST ################
+        'no longer sets any image. only creates the objects rectangle'
         self.width = width
         self.height = height
-        self.image = self.image_orig.copy()
         self.rect = pygame.Rect(self.x, self.y, width, height)
 
     def register_collision_object(self, collision_object):
-        '''
-        Registers a collision object\n
-        Takes 1 argument: collision_object\n
-        This is the class name of the object 
-        '''
         self.collision_object_types.add(collision_object)
 
     def update(self):
@@ -67,11 +42,6 @@ class RoomObject:
         self.rect.y = self.y
 
     def delete_object(self, obj):
-        '''
-        deletes an object\n
-        takes 1 argument: obj\n
-        This is the class name of the object
-        '''
         self.room.delete_object(obj)
 
     def remove_object(self, obj):
@@ -83,16 +53,11 @@ class RoomObject:
         pass
 
     def check_collisions(self):
-        '''
-        Checks if the ovject is colliding with another object\n
-        Takes no arguments
-        '''
         for item in self.collision_objects:
             if self.rect.colliderect(item.rect):
                 self.handle_collision(item)
 
     def collides_at(self, obj, x, y, collision_type):
-
         check_rect = obj.rect.move(x, y)
         collision_found = False
         for item in self.collision_objects:
@@ -134,11 +99,6 @@ class RoomObject:
         self.y_speed = 0
 
     def set_timer(self, ticks, function_call):
-        '''
-        Waits a set number of ticks before running a function\n
-        Takes 2 arguments: ticks, function_call\n
-        After the set number of ticks, the function defined with "function_call" will be run
-        '''
         self.room.set_timer(ticks, function_call)
 
     def set_direction(self, angle, speed):
@@ -213,48 +173,38 @@ class RoomObject:
 
     def rotate(self, angle):
 
-        if self.curr_rotation > 360:
-            self.curr_rotation = self.curr_rotation - 360
-        elif self.curr_rotation < 0:
-            self.curr_rotation = 350 - self.curr_rotation
+        self.curr_rotation%=360
 
         self.curr_rotation = self.angle = angle + self.curr_rotation
-
-        self.image = pygame.transform.rotate(self.image_orig, self.angle)
-
+        
         x, y = self.rect.center
 
-        self.rect = self.image.get_rect()
+        # start code for creating a rotation of the rect, but not the surface   # mostly 4000ns to 10000ns.
+        angle = math.radians((self.angle)%90)
+        # width = height = self.width*(math.sin(angle)+math.cos(angle)) # only works for squares, see https://math.stackexchange.com/questions/828878/calculate-dimensions-of-square-inside-a-rotated-square#:~:text=The%20answer%20is%20surprisingly%20simple,0%20and%20%CF%80%2F2%20radians.
+        width = self.width*math.cos(angle) + self.height*math.sin(angle)
+        height = self.width*math.sin(angle) + self.height*math.cos(angle)
+        self.rect = pygame.Rect(0,0,width,height) # constructing rect: 2000ns to 5000ns
+        # end of additional code for rotating
 
         self.x = x - int((self.rect.width / 2))
-        self.y = y - int((self.rect.height / 2))
+        self.y = y - int((self.rect.height / 2))       
 
         self.rect.x = self.x
         self.rect.y = self.y
+        
 
     def get_rotation_to_coordinate(self, target_x, target_y):
-        '''
-        returns the rotation to a set of coordinates\n
-        takes 2 arguments: target_x and target_y
-        '''
         distance_x = self.x + (self.width / 2) - target_x
         distance_y = self.y + (self.height / 2) - target_y
 
         return math.degrees(math.atan2(distance_x, distance_y))
 
     def rotate_to_coordinate(self, target_x, target_y):
-        '''
-        rotates the bot towards a set of given coordinates\n
-        takes 2 arguments: target_x and target_y
-        '''
         self.curr_rotation = 0
         self.rotate(self.get_rotation_to_coordinate(target_x, target_y))
 
     def get_position(self):
-        '''
-        Returns the position of the bot\n
-        Takes no arguments\n
-        '''
         return self.x, self.y
 
     def move_in_direction(self, angle, distance):
@@ -263,12 +213,6 @@ class RoomObject:
         self.y += y
 
     def point_to_point_distance(self, x1, y1, x2, y2):
-        '''
-        returns the distance between 2 points\n
-        takes 4 arguments: x1, y1, x2, y2\n
-        x1 and y1 refer to the first set of coordinates\n
-        x2 and y2 refer to the second set of coordinates        
-        '''
         x_dist = abs(x1 - x2)
         y_dist = abs(y1 - y2)
         return math.sqrt(x_dist * x_dist + y_dist * y_dist)

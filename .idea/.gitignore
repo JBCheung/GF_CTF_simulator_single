@@ -1,0 +1,10 @@
+# Default ignored files
+/shelf/
+/workspace.xml
+
+# results files
+*.json
+
+# compiled python files
+__pycache__/
+*.pyc

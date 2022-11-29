@@ -15,7 +15,6 @@ class Red5(RedBot):
         self.curr_state = STATE.WAIT
 
     def tick(self):
-
         if self.curr_state == STATE.WAIT:
             self.wait()
         elif self.curr_state == STATE.ATTACK:
@@ -23,7 +22,7 @@ class Red5(RedBot):
         elif self.curr_state == STATE.JAIL_BREAK:
             self.jailbreak()
         else:
-            self.curr_state = STATE.RETURN_HOME
+            self.curr_state = STATE.WAIT
 
     def wait(self):
         bot, distance = self.closest_enemy_to_flag()
@@ -37,6 +36,9 @@ class Red5(RedBot):
                     break
             if bot_jailed:
                 self.curr_state = STATE.JAIL_BREAK
+            else:
+                self.turn_towards(Globals.blue_flag.x, Globals.blue_flag.y, Globals.FAST)
+                self.drive_forward(Globals.FAST)
 
     def attack(self):
         bot, distance = self.closest_enemy_to_flag()

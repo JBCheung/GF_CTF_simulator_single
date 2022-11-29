@@ -1,24 +1,25 @@
 from GameFrame import RedBot, Globals
 from enum import Enum
-
+import random
 
 class STATE(Enum):
     WAIT = 1
     ATTACK = 2
+    JAIL_BREAK = 3
 
 
 class Red4(RedBot):
     def __init__(self, room, x, y):
         RedBot.__init__(self, room, x, y)
-
         self.curr_state = STATE.WAIT
 
     def tick(self):
-
         if self.curr_state == STATE.WAIT:
             self.wait()
         elif self.curr_state == STATE.ATTACK:
             self.attack()
+        #elif self.curr_state == STATE.JAIL_BREAK:
+        #    self.jailbreak()
         else:
             self.curr_state = STATE.WAIT
 
@@ -26,6 +27,17 @@ class Red4(RedBot):
         bot, distance = self.closest_enemy_to_flag()
         if distance < 250:
             self.curr_state = STATE.ATTACK
+        else:
+            bot_jailed = False
+            for team_bot in Globals.red_bots:
+                if team_bot.jailed:
+                    bot_jailed = True
+                    break
+            if bot_jailed:
+                self.curr_state = STATE.JAIL_BREAK
+            else:
+                self.turn_towards(Globals.blue_flag.x, Globals.blue_flag.y, Globals.FAST)
+                self.drive_forward(Globals.FAST)
 
     def attack(self):
         bot, distance = self.closest_enemy_to_flag()
@@ -34,6 +46,18 @@ class Red4(RedBot):
             self.drive_forward(Globals.FAST)
         else:
             self.curr_state = STATE.WAIT
+
+    def jailbreak(self):
+        bot_jailed = False
+        for team_bot in Globals.red_bots:
+            if team_bot.jailed:
+                bot_jailed = True
+                break
+        if not bot_jailed:
+            self.curr_state = STATE.WAIT
+        else:
+            self.turn_towards(Globals.SCREEN_WIDTH - 36, Globals.SCREEN_HEIGHT - 40, Globals.FAST)
+            self.drive_forward(Globals.FAST)
 
     def closest_enemy_to_flag(self):
         closest_bot = Globals.blue_bots[0]

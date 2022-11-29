@@ -1,42 +1,56 @@
 #!/usr/bin/python3
 
-import sys
-import pygame
-from GameFrame import Globals
 
-pygame.mixer.pre_init(44100, -16, 2, 2048)
-pygame.mixer.init()
-pygame.init()
-pygame.font.init()
+def main():
+    import os
+    import time
+    import pygame
+    from GameFrame import Globals
+    from Rooms.Arena import Arena
+    from simulation_results_logger import simulation_results_logger
+    
 
-pygame.display.set_caption(Globals.window_name)
-window_size = (Globals.SCREEN_WIDTH, Globals.SCREEN_HEIGHT)
-screen = pygame.display.set_mode(window_size,
-                                 pygame.DOUBLEBUF, 32)
+    Globals.next_level = Globals.start_level
+    levels = Globals.levels
+    
 
-Globals.next_level = Globals.start_level
-levels = Globals.levels
-
-# - Main Game Loop. Steps through the levels defined in levels[] - #
-while Globals.running:
-
-    curr_level = Globals.next_level
-    Globals.next_level += 1
-    Globals.next_level %= len(levels)
-    mod_name = "Rooms.{}".format(levels[curr_level])
-    mod = __import__(mod_name)
-    class_name = getattr(mod, levels[curr_level])
-    room = class_name(screen)
-    exit_val = room.run()
-
-    if exit_val is True or Globals.running is False:
-
-        Globals.next_level = Globals.end_game_level
-
-        if len(levels) == 1:
+    # the object used to collect, format, and output results
+    simulation_logger = simulation_results_logger()
+    if Globals.compound_to_previous_data:
+        if os.path.exists(os.path.join(os.getcwd(), 'RawResults.json')):
+            simulation_logger.load_data_json() # must be raw data, otherwise values not be updated correctly
+    
+    
+    for iteration in range(0,Globals.max_iterations):
+        # resetting Globals for new simulation
+        Globals.running = True
+        Globals.exiting = False
+        Globals.red_bots=[]
+        Globals.blue_bots=[]
+        Globals.blue_enemy_side_time=0
+        Globals.red_enemy_side_time=0
+        Globals.red_flag=0
+        Globals.blue_flag=0
+        
+        
+        try:
+            room = Arena()
+            start=time.perf_counter()
+            exit_val = room.run()
+            end=time.perf_counter()
+            realtimetaken = end-start
+            # show statistics so simulation runners know whats happening while the simulation runs (could use multithreading for realtime)
+            iteration_no_text = f'{str(iteration+1).zfill(len(str(Globals.max_iterations)))}/{Globals.max_iterations}'
+            fps = (3600-room.counter)/realtimetaken
+            print(f"Simulation {iteration_no_text} took {realtimetaken} | FPS:{fps}")
+            # after game ended, log results
+            simulation_logger.log_results(room, realtimetaken)
+        except KeyboardInterrupt: # allows for simulations to be interupted without losing previously logged data
             break
-
-    if Globals.exiting:
-        break
-
-sys.exit()
+        
+    simulation_logger.output()
+        
+            
+            
+if __name__ == "__main__":
+    main()

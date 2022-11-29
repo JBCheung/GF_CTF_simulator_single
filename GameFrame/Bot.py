@@ -1,17 +1,42 @@
 from GameFrame import RoomObject
-from GameFrame import Globals
-
+from GameFrame import Globals, Simulation_Flags
+import pygame
 
 class Bot(RoomObject):
-    def __init__(self, room, x, y):
+    def __init__(self, room, x, y,size=60, font='Comic Sans MS', colour=(0, 0, 0), bold=False):
         RoomObject.__init__(self, room, x, y)
         self.starting_x = x
         self.starting_y = y
         self.has_flag = False
         self.jailed = False
+        self.prev_distance_moved = 0
+        self.distance_moved = 0
+        
+        # for statistics 
+        self.points=0
+        self.deaths=0
+        self.kills=0
+        self.time_with_flag=0
+        self.friends_released=0
+
+        self.if_cheating_flag = None
+
+        
+        # for add_text, from TextObject
+        """self.size = size
+        self.font = font
+        self.colour = colour
+        self.bold = bold
+
+    def add_text(self, text):
+        self.built_font = pygame.font.SysFont(self.font, self.size, self.bold)
+        self.rendered_text = self.built_font.render(text, True, self.colour)
+        self.rendered_text = pygame.transform.scale(self.rendered_text, (self.width, self.height))
+        self.image_orig.blit(self.rendered_text, (0,0))"""
 
     def step(self):
         if not self.jailed:
+            self.prev_distance_moved = self.distance_moved
             self.frame()
             if self.x <= 0:
                 self.blocked()
@@ -27,11 +52,6 @@ class Bot(RoomObject):
         pass
 
     def turn_left(self, speed=Globals.SLOW):
-        '''
-        Turns the bot to the left\n
-        Takes 1 argument: speed(optional)\n
-        The speed can be Globals.SLOW, Globals.MEDIUM, and Globals.FAST, defaults to Globals.SLOW
-        '''
         if self.has_flag:
             self.rotate(40)
         elif speed == Globals.FAST:
@@ -42,11 +62,6 @@ class Bot(RoomObject):
             self.rotate(3)
 
     def turn_right(self, speed=Globals.SLOW):
-        '''
-        Turns the bot to the right\n
-        Takes 1 argument: speed(optional)\n
-        The speed can be Globals.SLOW, Globals.MEDIUM, and Globals.FAST, defaults to Globals.SLOW
-        '''
         if self.has_flag:
             self.rotate(-40)
         elif speed == Globals.FAST:
@@ -57,11 +72,7 @@ class Bot(RoomObject):
             self.rotate(-3)
 
     def turn_towards(self, x, y, speed=Globals.SLOW):
-        '''
-        Turns towards the given coordinates\n
-        Takes 3 arguments: x, y, speed(optional)\n
-        The speed can be Globals.SLOW, Globals.MEDIUM, and Globals.FAST, defaults to Globals.SLOW
-        '''
+
         target_angle = int(self.get_rotation_to_coordinate(x, y))
 
         if target_angle < 0:
@@ -79,11 +90,6 @@ class Bot(RoomObject):
                 self.turn_right(speed)
 
     def drive_forward(self, speed=Globals.SLOW):
-        '''
-        Moves the bot in the direction that it is facting\n
-        Takes 1 argument, speed(optional)\n
-        The speed can be Globals.SLOW, Globals.MEDIUM, and Globals.FAST, defaults to Globals.SLOW
-        '''
         if speed == Globals.FAST:
             self.move_in_direction(self.curr_rotation, Globals.FAST)
         elif speed == Globals.MEDIUM:
@@ -92,11 +98,23 @@ class Bot(RoomObject):
             self.move_in_direction(self.curr_rotation, Globals.SLOW)
 
     def drive_backward(self):
-        '''
-        Moves the bot backward\n
-        Takes no arguments
-        '''
         direction = self.curr_rotation - 180
         if direction < 0:
             direction = 360 + direction
         self.move_in_direction(direction, Globals.SLOW)
+
+    def rotate(self, angle):
+        if abs(angle) > 9:
+            if not (abs(angle) <= 40 and self.has_flag) and self.curr_rotation!=0:
+                self.room.flags.add(self.if_cheating_flag)
+                self.room.flags.add(f'{self.__class__.__name__} turning too fast ({angle=})')
+        return super().rotate(angle)
+    
+    def move_in_direction(self, angle, distance):
+        self.distance_moved += distance
+        if abs(self.distance_moved-self.prev_distance_moved) > Globals.FAST:
+            self.room.flags.add(self.if_cheating_flag)
+            if not (True in [str(flag).startswith(self.__class__.__name__) for flag in self.room.flags]):
+                self.room.flags.add(f'{self.__class__.__name__} moving too fast ({distance=}) ({self.distance_moved-self.prev_distance_moved})')
+        super().move_in_direction(angle, distance)
+        #dist = self.point_to_point_distance(self.prev_x, self.prev_y, self.x, self.y)
