@@ -9,7 +9,7 @@ def main():
     from Rooms.Arena import Arena
     from simulation_results_logger import simulation_results_logger
     
-
+    start_main=time.perf_counter()
     Globals.next_level = Globals.start_level
     levels = Globals.levels
     
@@ -47,8 +47,9 @@ def main():
             simulation_logger.log_results(room, realtimetaken)
         except KeyboardInterrupt: # allows for simulations to be interupted without losing previously logged data
             break
-        
-    simulation_logger.output()
+    end_main=time.perf_counter()
+    print(f'simulation took: {end_main-start_main}')
+    simulation_logger.output(total_run_time=end_main-start_main)
         
             
             

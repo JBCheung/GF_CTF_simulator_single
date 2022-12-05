@@ -10,6 +10,8 @@ from simulation_results_logger import simulation_results_logger
 import multiprocessing
 
 def simulation(iteration:int, simulation_logger:multiprocessing.Value, loggerlock) -> None:
+    from GameFrame import Globals
+    Globals = Globals.reset_globals(Globals)
     start=time.perf_counter()
     room = Arena()
     Flags = room.run() #start simulation

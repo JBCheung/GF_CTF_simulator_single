@@ -89,6 +89,23 @@ class Globals:
     red_enemy_side_time = 0
     blue_enemy_side_time = 0
 
+    def reset_globals(Globals):
+                Globals.red_player = 'Red'
+                Globals.blue_player = 'Blue'
+                Globals.players_list = []
+                Globals.game_list = []
+                Globals.current_battle = 0
+                Globals.winner=''
+                Globals.running = True
+                Globals.exiting = False
+                Globals.red_bots=[]
+                Globals.blue_bots=[]
+                Globals.blue_enemy_side_time=0
+                Globals.red_enemy_side_time=0
+                Globals.red_flag=0
+                Globals.blue_flag=0
+                return Globals
+
 class Simulation_Flags(Enum):
     BLUE_CHEATER=0
     RED_CHEATER=1
