@@ -15,10 +15,10 @@ class simulation_results_logger():
             },
         }
     
-    def log_team(self, bots, teamName, ticksleft, team_colour, points, extra_info={}):
+    def log_team(self, bots, teamName, ticksleft, team_colour, points, flags={}):
             self.data[teamName] = self.data.get(teamName, {})
             self._log_overall_team_results(teamName, ticksleft, team_colour, points)
-            self.data[teamName]['overall'].update(extra_info)
+            self.data[teamName]['overall'] = self._update_flags(self.data[teamName]['overall'], flags)
             for bot in bots:
                 self._log_bot(bot,teamName)
     def _log_overall_team_results(self, teamName, ticksleft, team_colour, points):
@@ -92,9 +92,9 @@ class simulation_results_logger():
             'error_occurred':red_error
         }
         if not red_cheating:
-            self.log_team(Globals.blue_bots, Globals.blue_player, ticksleft, team_colour='blue', points=Globals.blue_enemy_side_time, extra_info=blue_extrainfo)
+            self.log_team(Globals.blue_bots, Globals.blue_player, ticksleft, team_colour='blue', points=Globals.blue_enemy_side_time, flags=blue_extrainfo)
         if not blue_cheating:
-            self.log_team(Globals.red_bots, Globals.red_player, ticksleft, team_colour='red', points=Globals.red_enemy_side_time, extra_info=red_extrainfo)
+            self.log_team(Globals.red_bots, Globals.red_player, ticksleft, team_colour='red', points=Globals.red_enemy_side_time, flags=red_extrainfo)
         self.log_simulation_overall(arena, simulation_time)
         pass
 
@@ -128,6 +128,14 @@ class simulation_results_logger():
                     data[key] = self.tickstotime(statistics.mean(value))
                 else:
                     data[key] = statistics.mean(value)
+        return data
+    @staticmethod
+    def _update_flags(data:dict, flags:dict) -> dict:
+        'similar to built-in method update, where items of data are updated unless '
+        for key, flag in flags.items():
+            # always write unless the value of key exists and is True-like
+            if not data.get(key, False):
+                data[key]=flag
         return data
     def load_data_json(self):
         with open('RawResults.json','r') as file:
