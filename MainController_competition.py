@@ -9,7 +9,7 @@ from Rooms.Arena import Arena
 from simulation_results_logger import simulation_results_logger
 import multiprocessing
 
-def task_msg(func, msg) -> function:
+def task_msg(func, msg):
     def inner(*args, **kwargs):
         print(f'{msg}... ', end='')
         value = func(*args, **kwargs)
