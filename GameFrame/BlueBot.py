@@ -61,7 +61,6 @@ class BlueBot(Bot):
         try:
             self.tick()
         except Exception as e:
-            #print(f"Blue Exception occurred: {e}")
             self.room.flags.add(Simulation_Flags.BLUE_ERROR)
             self.room.flags.add(e.__repr__())
             

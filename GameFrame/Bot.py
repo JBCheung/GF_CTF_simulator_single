@@ -21,18 +21,6 @@ class Bot(RoomObject):
 
         self.if_cheating_flag = None
 
-        
-        # for add_text, from TextObject
-        """self.size = size
-        self.font = font
-        self.colour = colour
-        self.bold = bold
-
-    def add_text(self, text):
-        self.built_font = pygame.font.SysFont(self.font, self.size, self.bold)
-        self.rendered_text = self.built_font.render(text, True, self.colour)
-        self.rendered_text = pygame.transform.scale(self.rendered_text, (self.width, self.height))
-        self.image_orig.blit(self.rendered_text, (0,0))"""
 
     def step(self):
         if not self.jailed:

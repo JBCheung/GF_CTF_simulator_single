@@ -59,7 +59,6 @@ class RedBot(Bot):
         try:
             self.tick()
         except Exception as e:
-            #print(f"Red Exception occurred: {e}")
             self.room.flags.add(Simulation_Flags.RED_ERROR)
             self.room.flags.add(e.__repr__())
 

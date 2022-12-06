@@ -25,7 +25,7 @@ class RoomObject:
         self.collision_object_types = set()
         self.collision_objects = []
 
-    def set_rect(self, width, height): ################# REMOVE COLOUR ARGUMENT AFTER TEST ################
+    def set_rect(self, width, height):
         'no longer sets any image. only creates the objects rectangle'
         self.width = width
         self.height = height

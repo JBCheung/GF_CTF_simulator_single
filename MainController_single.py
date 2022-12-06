@@ -2,7 +2,6 @@
 
 import os
 import time
-import pygame
 import shutil
 from GameFrame import Globals, Simulation_Flags
 from Rooms.Arena import Arena
@@ -25,42 +24,43 @@ def simulation(iteration:int, simulation_logger:multiprocessing.Value, loggerloc
     fps = (3600-room.counter)/realtimetaken
     print(f"Simulation {iteration_no_text} took {realtimetaken:<18} | FPS:{fps:<18} | winner: {Globals.winner:<4} | {flagsText}")
     
-    #logging data and acquiring lock before doing so
+    #handle flags whilst logging data
     loggerlock.acquire()
-    logger = simulation_logger.value
-    logger.log_results(room, realtimetaken)
-    simulation_logger.value = logger
+    logger = simulation_logger.get()
+    logger.log_results(room, Globals, Flags, realtimetaken)
+    simulation_logger.set(logger)
     loggerlock.release()
     
-
 def main():
+    os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = 'hide' #removes 'welcome to pygame' message for future imports
     start = time.perf_counter()
-    Globals.next_level = Globals.start_level
-    levels = Globals.levels
     manager = multiprocessing.Manager()
+    # lock for processes to access logger
     loggerlock = manager.Lock()
     # the object used to collect, format, and output results. Using Manager.Value to share the object across processes (simulations)
     simulation_logger = manager.Value(simulation_results_logger, value=simulation_results_logger())
+    
     if Globals.compound_to_previous_data:
         if os.path.exists(os.path.join(os.getcwd(), 'RawResults.json')):
-            simulation_logger.value.load_data_json() # must be raw data, otherwise values not be updated correctly
-
+            logger = simulation_logger.get()
+            logger.load_data_json() # must be raw data, otherwise values not be updated correctly
+            simulation_logger.set(logger)
     def argument_generator(simulation_logger, loggerlock):
+        "a generator for the simulation's arguments"
         for i in range(Globals.max_iterations):
             yield i, simulation_logger, loggerlock
     
-    print('start Pool/ processes')
+    print(f'start Pool of {Globals.max_processes} processes | total simulations: {Globals.max_iterations}')
     with multiprocessing.Pool(Globals.max_processes) as pool:
         pool.starmap(simulation, iterable=argument_generator(simulation_logger, loggerlock))
-    print('waiting for pool to end')
+    print('waiting for pool to end... ', end='')
     pool.join()
-    print('pool ended')
-
+    print('done')
 
     end = time.perf_counter()
-    print('logging results')
+    print('logging results... ', end='')
     simulation_logger.value.output(total_run_time=end-start)
-    print('logging results finished')
+    print('done')
     print(f'total simulation time | {end-start}')        
             
 if __name__ == "__main__":

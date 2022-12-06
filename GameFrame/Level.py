@@ -1,6 +1,6 @@
 import os
 import pygame
-from GameFrame.Globals import Globals
+from GameFrame.Globals import Globals, Simulation_Flags
 import time
 
 class Level:
@@ -16,20 +16,20 @@ class Level:
         self.running = True
         for obj in self.objects:
             self.init_collision_list(obj)
-
+        
         while self.running:
-            self.tick() # 15800ns to 42900ns 
+            self.tick()
             for obj in self.objects:
                 obj.prev_x = obj.x
                 obj.prev_y = obj.y
 
             # - Process user events - #
-            self.process_user_events() # 6300ns to 9000ns per tick
+            self.process_user_events()
             # Check collisions
-            for item in self.objects: # 30000ns to 35000ns => required
+            for item in self.objects:
                 item.check_collisions()
             # Call Update on all objects
-            for item in self.objects: # 3,592,500ns to 4,430,900ns per tick => required\
+            for item in self.objects:
                 item.update()
                 item.step()
         return self.flags
