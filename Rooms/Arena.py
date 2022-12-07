@@ -1,5 +1,5 @@
 from GameFrame import Level, Globals, RedFlag, BlueFlag, TextObject
-
+import importlib
 
 class Arena(Level):
     def __init__(self):
@@ -7,6 +7,10 @@ class Arena(Level):
         from Objects import DangerZone
         from Objects import Red1, Red2, Red3, Red4, Red5
         from Objects import Blue1, Blue2, Blue3, Blue4, Blue5
+
+        #reload the Bot classes to account for the changing bots in Objects between simulations. 
+        Red1, Red2, Red3, Red4, Red5 = self._reload_botclasses(Red1, Red2, Red3, Red4, Red5)
+        Blue1, Blue2, Blue3, Blue4, Blue5 = self._reload_botclasses(Blue1, Blue2, Blue3, Blue4, Blue5)
 
         Globals.red_bots.append(Red1(self, Globals.SCREEN_WIDTH - 250, Globals.SCREEN_HEIGHT / 4))
         Globals.blue_bots.append(Blue1(self, 108, Globals.SCREEN_HEIGHT / 3))
@@ -44,6 +48,15 @@ class Arena(Level):
         self.seconds = 120
 
         self.set_timer(3600, self.timed_out)
+
+    @staticmethod
+    def _reload_botclass(botclass:type) -> type:
+        module = importlib.import_module(botclass.__module__)
+        module = importlib.reload(module)
+        return getattr(module, botclass.__name__)
+    
+    def _reload_botclasses(self, *botclasses) -> map:
+        return map(self._reload_botclass, botclasses)
 
     def tick(self):
         self.counter -= 1
