@@ -100,9 +100,12 @@ class Bot(RoomObject):
     
     def move_in_direction(self, angle, distance):
         self.distance_moved += distance
-        if abs(self.distance_moved-self.prev_distance_moved) > Globals.FAST:
+        # find difference in distance moved from last tick to currently. 
+        # rounding to account for the imprecisions of floating point arithmetic
+        if round(abs(self.distance_moved-self.prev_distance_moved), 10) > Globals.FAST:
             self.room.flags.add(self.if_cheating_flag)
-            if not (True in [str(flag).startswith(self.__class__.__name__) for flag in self.room.flags]):
+            # if a cheating flag message for this bot isn't already in the flags set
+            if True not in [str(flag).startswith(self.__class__.__name__) for flag in self.room.flags]:
                 self.room.flags.add(f'{self.__class__.__name__} moving too fast ({distance=}) ({self.distance_moved-self.prev_distance_moved})')
-        super().move_in_direction(angle, distance)
+        return super().move_in_direction(angle, distance)
         #dist = self.point_to_point_distance(self.prev_x, self.prev_y, self.x, self.y)
