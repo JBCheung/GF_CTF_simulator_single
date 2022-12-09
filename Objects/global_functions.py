@@ -1,4 +1,5 @@
-from GameFrame import BlueBot, RedBot, Bot, Globals
+import math
+from GameFrame import BlueBot, Bot, Globals, RedBot
 
 
 class Global_Functions(Bot):
@@ -6,13 +7,12 @@ class Global_Functions(Bot):
     
     def closest_bot_to_coord(self, group_of_bots:list, x:float, y:float, other_condition=lambda bot: True) -> tuple[float, Bot]:
         closest = group_of_bots[0]
-        closestx, closesty = closest.rect.center
-        dist = self.point_to_point_distance(x,y,closestx, closesty)
+        closestpos = closest.rect.center
+        dist = math.dist((x,y),closestpos)
         for bot in group_of_bots:
             if not other_condition(bot):
                 continue
-            botx, boty = bot.rect.center
-            temp_dist = self.point_to_point_distance(x,y,botx,boty)
+            temp_dist = math.dist((x,y),bot.rect.center)
             if temp_dist < dist:
                 closest = bot
                 dist = temp_dist
@@ -69,77 +69,29 @@ class Global_Functions(Bot):
         '''
         x, y should be coordinate that your driving towards 
         '''
-        selfx, selfy = self.rect.center
-        distance = self.point_to_point_distance(selfx, selfy, x, y)
-        if self.DEBUG: print(f'in clean_drive_forwards: {distance=}')
-        if self.DEBUG: print(f"{self.x=} {self.y=}")
-        
+        distance = math.dist(self.rect.center, (x, y))
+        if self.DEBUG: print(f'in clean_drive_forwards: {distance=}\n{self.x=} {self.y=}')
         
         if distance >= Globals.FAST:
             self.drive_forward(speed=Globals.FAST)
-            if self.DEBUG: print('MOVE Fast')
         elif distance >= Globals.MEDIUM:
-            self.drive_forward(speed=Globals.MEDIUM)
-            if self.DEBUG: print('MOVE Medium')      
+            self.drive_forward(speed=Globals.MEDIUM)    
         elif distance >= Globals.SLOW:
             self.drive_forward(speed=Globals.SLOW)
-            if self.DEBUG: print('MOVE Slow') 
         elif distance < Globals.SLOW:
             self.move_in_direction(self.curr_rotation, distance)  
-            if self.DEBUG: print(f"this distance should be less than 3, otherwise cheating {distance}") 
-        else:
-            print('something is REALLY BAD in clean_drive_forwards')
-            raise ValueError('in method: clean_drive_forwards() - negative length input')
         return
     def is_infront(self, enemy, dist=100):
         '''
-        tests if given enemy is a distance infront of self
+        tests if given enemy is within a distance infront of self
         '''
-        #selfx, selfy = self.rect.center
-        enemyx, enemyy = enemy.rect.center
-        if self.point_to_point_distance(self.x, self.y, enemyx, enemyy) <= dist:
+        if math.dist(self.rect.center, enemy.rect.center) <= dist:
             # similar to is pointing towards with large error 
-            return self.points_toward_coordinate(enemyx, enemyy, error=120)      
+            return self.points_toward_coordinate(*enemy.rect.center, error=120)      
     def points_toward_coordinate(self,x,y,error=10) -> bool:
         target_angle = self.centred_get_rotation_to_coordinate(x,y)
         target_angle = 360+target_angle if target_angle<0 else target_angle
-        return (int(self.curr_rotation) >= int(target_angle-error)) and (int(self.curr_rotation) <= int(target_angle+error))
-
-    def quadrant(self, x, y):
-        '''
-        which quadrant coordinate is from self
-        
-        returns  is_left, is_right, is_backleft, is_backright
-        '''
-        X1,X2,Y1,Y2=self.x,x,self.y,y
-        XD,YD=X1-X2 if X1>X2 else X2-X1,Y1-Y2 if Y1>Y2 else Y2-Y1
-        # print(X1,X2,Y1,Y2)
-
-        QUAD1=False
-        QUAD2=False
-        QUAD3=False
-        QUAD4=False
-        
-        if X1<X2 and Y1>Y2:
-            #print("""Quad 1""")
-            QUAD1=True
-            #print("drive")
-
-        elif X1>X2 and Y1>Y2:
-            # print("""Quad 2""")
-            QUAD2=True
-            #    print("drive")
-                
-        elif X1>X2 and Y1<Y2:
-            #   print("""Quad 3""")
-            QUAD3=True
-            #    print("drive")
-
-        elif X1<X2 and Y1<Y2:
-            #  print("""Quad 4""")
-            QUAD4=True
-        
-        return (QUAD4,QUAD1,QUAD3,QUAD2)
+        return int(target_angle+error) >= int(self.curr_rotation) >= int(target_angle-error)
 
     def is_left(self,x,y):
         target_angle = self.get_rotation_to_coordinate(x,y)
@@ -156,7 +108,7 @@ class Global_Functions(Bot):
         # while dummy_bot       
         
         rotation_to_coord = abs(self.relative_rotation_to_coordinate(x, y))
-        distance = self.point_to_point_distance(self.x, self.y, x, y)
+        distance = math.dist((self.x, self.y), (x, y))
         ticks=0
         ticks += rotation_to_coord//Globals.FAST
         rotation_to_coord %= Globals.FAST
@@ -188,14 +140,12 @@ class Global_Functions(Bot):
         return rotation_to_coord
     
     def centred_get_rotation_to_coordinate(self, x, y):
-        import math
         distance_x = self.rect.centerx - x
         distance_y = self.rect.centery - y
         return math.degrees(math.atan2(distance_x, distance_y))
     
     def weighted_least_dist(self, enemy_team, coords_along_border=4, exponent=-1, max_distance=400, min_dist_to_flag=25):
         '''min distance allows for bots past a certain range to be excluded, useful for outlying the jailer bot or camper bot'''
-        import math
         # declare variables and containers for data.
         if coords_along_border >= Globals.SCREEN_HEIGHT:
             coordinates=[(Globals.SCREEN_WIDTH/2, y) for y in range(50, Globals.SCREEN_HEIGHT-50)]
@@ -210,13 +160,13 @@ class Global_Functions(Bot):
             curr_value = 0
             # loop through enemies, check requirements based on max_distance and min_dist_to_flag
             for enemy in enemy_team:
-                distance = self.point_to_point_distance(coord[0], coord[1], enemy.x, enemy.y)
-                dist_to_flag = self.point_to_point_distance(enemy.x, enemy.y, flag.x, flag.y)
+                distance = math.dist(coord, (enemy.x, enemy.y))
+                dist_to_flag = math.dist((enemy.x, enemy.y), (flag.x, flag.y))
                 if (0 < distance < max_distance) and (dist_to_flag > min_dist_to_flag) and (not self.is_past_halfway(enemy)):
                     # if past tests, add value to weight, larger values weighted less, (better for the test)
                     curr_value += distance**exponent
             # the min() function should prioritise the value, then the overall distance to travel to get to the flag
-            dist_to_flag_plus_self = self.point_to_point_distance(coord[0], coord[1], flag.x, flag.y) + self.point_to_point_distance(coord[0], coord[1], self.x, self.y)
+            dist_to_flag_plus_self = math.dist(coord, (flag.x, flag.y)) + math.dist(coord, (self.x, self.y))
             values.append((curr_value,dist_to_flag_plus_self , coord))
         # find coordinate with least weight, then least distance to travel to the flag, then return coord. 
         value, coord_dist_to_flag_plus_self, coord = min(values)

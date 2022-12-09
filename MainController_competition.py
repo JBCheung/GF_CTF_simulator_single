@@ -96,7 +96,8 @@ def main():
         for i in range(len(Globals.game_list)):
             yield i, Globals.game_list, simulation_logger, filelock, loggerlock
     
-    
+    if Globals.max_processes > len(Globals.game_list):
+        Globals.max_processes = len(Globals.game_list)
     print(f'start Pool of {Globals.max_processes} processes | total simulations: {len(Globals.game_list)}')
     with multiprocessing.Pool(Globals.max_processes) as pool:
         pool.starmap(simulation, iterable=argument_generator(simulation_logger, filelock, loggerlock))

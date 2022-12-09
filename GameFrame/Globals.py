@@ -9,7 +9,7 @@ class Globals:
     #--------------- simulation settings ---------------#
     'necessary settings for running simulations.'
     max_iterations = 1 # number of simulations to run. Overwritten by competition version to be the length of game_list
-    max_processes = 1 #the number of simulations that can be run at the same time. adjust this as per your device's specifications
+    max_processes = 5 #the number of simulations that can be run at the same time. adjust this as per your device's specifications
     
     DEBUG = False
     shuffle_gamelist_order = False
